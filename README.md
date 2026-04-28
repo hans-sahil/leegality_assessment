@@ -174,3 +174,30 @@ http://localhost:3000
 This project focuses on **clean architecture, scalability, and user experience** while keeping the implementation simple and maintainable for the given scope.
 
 ---
+
+⚠️ API Limitation / Known Constraint
+
+This project uses the DummyJSON API for product data. A known limitation of this API affects pagination combined with client-side filtering.
+
+🔴 Issue Observed
+
+When applying filters such as brand filtering along with pagination:
+
+The API returns paginated results first (limit & skip)
+Filtering (e.g., brand, price) is applied client-side after fetching
+This causes inconsistent pagination behavior
+Example:
+Page 1 (category: smartphones)
+Only 1 product matches brand "realme"
+Page 2
+Contains additional "realme" products
+
+So the user experience becomes:
+
+Page 1 → 1 result
+Page 2 → 2 results
+(instead of a properly grouped paginated dataset)
+
+Root Cause :
+The DummyJSON API does not support combined server-side filtering + pagination, such as:
+/products?category=smartphones&brand=realme&page=2

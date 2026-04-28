@@ -1,9 +1,8 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import { SlidersHorizontal } from "lucide-react";
-
-import { useDebounce } from "@/hooks/useDebounce";
 import { useProducts } from "@/hooks/useProducts";
 import { useCategories } from "@/hooks/useCategories";
 
@@ -12,24 +11,9 @@ import { Filters } from "@/src/components/SidebarFilters";
 import { Pagination } from "@/src/components/Pagination";
 import { Product } from "@/src/types/Product";
 import SkeletonGrid from "@/components/skeletons/ProductCardGrid";
+import { ProductFilters } from "@/src/types/FilterTypes";
 
-type FiltersState = {
-  page: number;
-  category: string;
-  brand: string[];
-  minPrice: string;
-  maxPrice: string;
-  sort: "" | "price-asc" | "price-desc" | "rating-desc";
-};
-
-const initialFilters: FiltersState = {
-  page: 1,
-  category: "all",
-  brand: [],
-  minPrice: "",
-  maxPrice: "",
-  sort: "",
-};
+const LIMIT = 20;
 
 function EmptyState() {
   return (
@@ -44,23 +28,130 @@ function EmptyState() {
 }
 
 export default function Home() {
-  const [filters, setFilters] = useState(initialFilters);
-  const [showFilters, setShowFilters] = useState(false);
+  const searchParams = useSearchParams();
+  const router = useRouter();
 
-  const debouncedFilters = useDebounce(filters, 400);
-  const { data, isLoading } = useProducts(debouncedFilters);
+  const [showFilters, setShowFilters] = useState(false);
+  const [brands, setBrands] = useState<string[]>([]);
+
+  // READ FILTERS FROM URL
+  const filters: ProductFilters = {
+    page: Number(searchParams.get("page") || 1),
+    category: searchParams.get("category") || "all",
+    brand: searchParams.get("brand")
+      ? searchParams.get("brand")!.split(",")
+      : [],
+    minPrice: searchParams.get("minPrice") || "",
+    maxPrice: searchParams.get("maxPrice") || "",
+    sort:
+      (searchParams.get("sort") as
+        | ""
+        | "price-asc"
+        | "price-desc"
+        | "rating-desc") || "",
+  };
+
+  // UPDATE PARAMS
+  const updateParams = (updates: Record<string, string | null>) => {
+    const params = new URLSearchParams(searchParams.toString());
+
+    Object.entries(updates).forEach(([key, value]) => {
+      if (value && value !== "") params.set(key, value);
+      else params.delete(key);
+    });
+
+    // reset page if filters change
+    if (!("page" in updates)) {
+      params.set("page", "1");
+    }
+
+    router.push(`/?${params.toString()}`);
+  };
+
+  const { data, isLoading } = useProducts(filters);
   const { data: categories } = useCategories();
 
-  const products = data?.products ?? [];
+  const filteredProductsWithTotalCount = useMemo(() => {
+    let products: Product[] = data ? (data.products as Product[]) : [];
+
+    // ⚠️ IMPORTANT:
+    // `totalCount` comes from the backend and represents total products for the selected category only.
+    // Client-side filters (brand, price range, sorting) are applied AFTER fetching,
+    // so this count does NOT reflect the filtered results. Dummy json api doesn't have
+    // support for these filterings
+
+    // Because of this, pagination may show inconsistent page counts
+    // (e.g., fewer products displayed than expected on some pages).
+
+    const totalCount = data?.total ?? 0;
+    // BRAND FILTER
+    if (filters.brand && filters.brand.length > 0) {
+      const brands = filters.brand || [];
+      products = products.filter((p) =>
+        p.brand ? brands.includes(p.brand) : false,
+      );
+    }
+
+    // PRICE VALIDATION
+    const min = filters.minPrice !== "" ? Number(filters.minPrice) : null;
+    const max = filters.maxPrice !== "" ? Number(filters.maxPrice) : null;
+
+    if (min !== null && !isNaN(min)) {
+      products = products.filter((p) => p.price >= min);
+    }
+
+    if (max !== null && !isNaN(max)) {
+      products = products.filter((p) => p.price <= max);
+    }
+
+    // SORT
+    if (filters.sort === "price-asc") {
+      products.sort((a, b) => a.price - b.price);
+    }
+
+    if (filters.sort === "price-desc") {
+      products.sort((a, b) => b.price - a.price);
+    }
+
+    if (filters.sort === "rating-desc") {
+      products.sort((a, b) => b.rating - a.rating);
+    }
+
+    return {
+      products,
+      total: totalCount,
+    };
+    // eslint-disable-next-line react-hooks/use-memo, react-hooks/exhaustive-deps
+  }, [data, JSON.stringify(filters)]);
+
+  const products = filteredProductsWithTotalCount.products;
 
   const totalPages = useMemo(
-    () => Math.ceil((data?.total ?? 0) / 8),
-    [data?.total],
+    () => Math.ceil(filteredProductsWithTotalCount.total / LIMIT),
+    [filteredProductsWithTotalCount],
   );
 
-  const brands = Array.from(
-    new Set(data?.products.map((p: Product) => p.brand).filter(Boolean)),
-  ) as string[];
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setBrands([]); // reset when category changes
+  }, [filters.category]);
+
+  useEffect(() => {
+    if (!data?.products) return;
+
+    const newBrands = Array.from(
+      new Set(data.products.map((p: Product) => p.brand).filter(Boolean)),
+    ) as string[];
+
+    // this is not a vry good solution to get the brands but we
+    // don't have any api support of fetching the brands across a category
+    // Also I have mentioned an issue regarding this brands in the Readme.md file
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setBrands((prev) => {
+      const merged = new Set([...prev, ...newBrands]);
+      return Array.from(merged);
+    });
+  }, [JSON.stringify(data?.products)]);
 
   return (
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8">
@@ -82,7 +173,7 @@ export default function Home() {
             categories={categories ?? []}
             brands={brands}
             filters={filters}
-            setFilters={setFilters}
+            updateParams={updateParams}
           />
         </div>
 
@@ -94,7 +185,7 @@ export default function Home() {
                 categories={categories ?? []}
                 brands={brands}
                 filters={filters}
-                setFilters={setFilters}
+                updateParams={updateParams}
               />
               <button
                 onClick={() => setShowFilters(false)}
@@ -119,16 +210,12 @@ export default function Home() {
                   <ProductCard key={p.id} {...p} />
                 ))}
               </div>
+
               <Pagination
-                currentPage={filters.page}
+                currentPage={filters.page as number}
                 totalPages={totalPages}
-                onPageChange={(page) =>
-                  setFilters((prev) => ({
-                    ...prev,
-                    page,
-                  }))
-                }
-              />{" "}
+                onPageChange={(page) => updateParams({ page: String(page) })}
+              />
             </>
           )}
         </div>

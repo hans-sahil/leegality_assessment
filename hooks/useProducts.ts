@@ -4,7 +4,7 @@ import { ProductFilters } from "@/src/types/FilterTypes";
 
 export function useProducts(filters: ProductFilters) {
   return useQuery({
-    queryKey: ["products", filters],
+    queryKey: ["products", filters.page, filters.category],
     queryFn: () => fetchProducts(filters),
     staleTime: 1000 * 60 * 2,
   });
