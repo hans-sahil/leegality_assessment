@@ -1,9 +1,10 @@
 // lib/api.ts
+import { ProductFilters } from "@/src/types/FilterTypes";
 import { Product } from "@/src/types/Product";
 
 const LIMIT = 8;
 
-export async function fetchProducts(filters: Record<string, any>) {
+export async function fetchProducts(filters: ProductFilters) {
   const page = Number(filters.page || 1);
   const skip = (page - 1) * LIMIT;
 
@@ -20,9 +21,9 @@ export async function fetchProducts(filters: Record<string, any>) {
 
   console.log("PRODUCTS AFTER CALLING THE API ",products)
 
-  // ✅ BRAND FILTER
-  if (filters.brand) {
-    const brands = filters.brand.split(",");
+  // BRAND FILTER
+  if (filters.brand && filters.brand.length > 0) {
+    const brands = filters.brand || [];
     products = products.filter((p) =>
       p.brand ? brands.includes(p.brand) : false
     );
@@ -30,7 +31,7 @@ export async function fetchProducts(filters: Record<string, any>) {
 
   console.log("PROD AFTER BRAND : ",products)
 
-  // ✅ PRICE VALIDATION (FIXED)
+  // PRICE VALIDATION
   const min =
   filters.minPrice !== "" ? Number(filters.minPrice) : null;
 
