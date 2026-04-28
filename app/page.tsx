@@ -134,6 +134,8 @@ export default function Home() {
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setBrands([]); // reset when category changes
+    updateParams({ brand: null, page: "1" });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters.category]);
 
   useEffect(() => {
@@ -151,6 +153,7 @@ export default function Home() {
       const merged = new Set([...prev, ...newBrands]);
       return Array.from(merged);
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [JSON.stringify(data?.products)]);
 
   return (
@@ -168,13 +171,15 @@ export default function Home() {
 
       <div className="flex gap-8">
         {/* DESKTOP FILTER */}
-        <div className="hidden lg:block">
-          <Filters
-            categories={categories ?? []}
-            brands={brands}
-            filters={filters}
-            updateParams={updateParams}
-          />
+        <div className="hidden lg:block relative">
+          <div className="sticky top-25">
+            <Filters
+              categories={categories ?? []}
+              brands={brands}
+              filters={filters}
+              updateParams={updateParams}
+            />
+          </div>
         </div>
 
         {/* MOBILE FILTER DRAWER */}

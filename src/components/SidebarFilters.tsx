@@ -127,36 +127,38 @@ export function Filters({ categories, brands, filters, updateParams }: Props) {
         </div>
 
         {/* BRAND */}
-        <div>
-          <button
-            onClick={() => toggleSection("brand")}
-            className="flex justify-between w-full text-sm font-medium"
-          >
-            Brand
-            <ChevronDown
-              size={16}
-              className={open.brand ? "rotate-180 transition" : "transition"}
-            />
-          </button>
+        {brands.length > 0 && (
+          <div>
+            <button
+              onClick={() => toggleSection("brand")}
+              className="flex justify-between w-full text-sm font-medium"
+            >
+              Brand
+              <ChevronDown
+                size={16}
+                className={open.brand ? "rotate-180 transition" : "transition"}
+              />
+            </button>
 
-          {open.brand && (
-            <div className="mt-2 space-y-2 max-h-48 overflow-auto">
-              {brands.map((b) => (
-                <label
-                  key={b}
-                  className="flex items-center gap-2 text-sm cursor-pointer"
-                >
-                  <input
-                    type="checkbox"
-                    checked={selectedBrands.includes(b)}
-                    onChange={() => toggleBrand(b)}
-                  />
-                  {b}
-                </label>
-              ))}
-            </div>
-          )}
-        </div>
+            {open.brand && (
+              <div className="mt-2 space-y-2 max-h-48 overflow-auto">
+                {brands.map((b) => (
+                  <label
+                    key={b}
+                    className="flex items-center gap-2 text-sm cursor-pointer"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={selectedBrands.includes(b)}
+                      onChange={() => toggleBrand(b)}
+                    />
+                    {b}
+                  </label>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* PRICE */}
         <div>
