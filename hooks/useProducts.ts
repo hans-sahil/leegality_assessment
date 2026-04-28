@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { fetchProducts } from "@/lib/api";
-import { ProductFilters } from "@/src/types/FilterTypes";
+import { ProductFilters } from "@/types/FilterTypes";
 
 export function useProducts(filters: ProductFilters) {
   return useQuery({

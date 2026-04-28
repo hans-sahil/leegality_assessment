@@ -1,6 +1,6 @@
 // lib/api.ts
-import { ProductFilters } from "@/src/types/FilterTypes";
-import { Product } from "@/src/types/Product";
+import { ProductFilters } from "@/types/FilterTypes";
+import { Product } from "@/types/Product";
 
 const LIMIT = 20;
 

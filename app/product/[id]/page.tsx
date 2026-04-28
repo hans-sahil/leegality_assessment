@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { ArrowLeft, AlertCircle, Package, Tag } from "lucide-react";
-import { ProductGallery } from "@/src/components/ProductGallery";
-import { Product } from "@/src/types/Product";
-import { StarRating } from "@/src/components/StarRating";
+import { ProductGallery } from "@/components/ProductGallery";
+import { Product } from "@/types/Product";
+import { StarRating } from "@/components/StarRating";
 
 async function getProduct(id: string): Promise<Product> {
   const res = await fetch(`https://dummyjson.com/products/${id}`, {

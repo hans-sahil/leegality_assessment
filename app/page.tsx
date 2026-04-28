@@ -6,12 +6,12 @@ import { SlidersHorizontal } from "lucide-react";
 import { useProducts } from "@/hooks/useProducts";
 import { useCategories } from "@/hooks/useCategories";
 
-import { ProductCard } from "@/src/components/ProductCard";
-import { Filters } from "@/src/components/SidebarFilters";
-import { Pagination } from "@/src/components/Pagination";
-import { Product } from "@/src/types/Product";
+import { ProductCard } from "@/components/ProductCard";
+import { Filters } from "@/components/SidebarFilters";
+import { Pagination } from "@/components/Pagination";
+import { Product } from "@/types/Product";
 import SkeletonGrid from "@/components/skeletons/ProductCardGrid";
-import { ProductFilters } from "@/src/types/FilterTypes";
+import { ProductFilters } from "@/types/FilterTypes";
 
 const LIMIT = 20;
 
