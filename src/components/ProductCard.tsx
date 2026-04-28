@@ -1,33 +1,25 @@
 import Image from "next/image";
 import { Star } from "lucide-react";
 import Link from "next/link";
-
-type ProductCardProps = {
-  id: string | number;
-  title: string;
-  price: number;
-  image: string;
-  rating: number;
-  reviews: number;
-};
+import { Product } from "../types/Product";
 
 export function ProductCard({
   id,
   title,
   price,
-  image,
+  thumbnail,
   rating,
   reviews,
-}: ProductCardProps) {
+}: Product) {
   const fullStars = Math.floor(rating);
 
   return (
     <Link href={`/product/${id}`}>
-      <div className="group rounded-2xl bg-background p-4 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
+      <div className="w-full group rounded-2xl bg-background p-4 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
         {/* Image */}
         <div className="relative w-full h-44 mb-4 overflow-hidden rounded-xl bg-muted/30">
           <Image
-            src={image}
+            src={thumbnail}
             alt={title}
             fill
             className="object-contain group-hover:scale-105 transition-transform duration-300"
@@ -53,7 +45,7 @@ export function ProductCard({
                 />
               ))}
             </div>
-            <span>({reviews})</span>
+            <span>({reviews.length})</span>
           </div>
         </div>
       </div>

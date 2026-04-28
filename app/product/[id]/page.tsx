@@ -42,7 +42,7 @@ export default async function ProductDetail({
         {/* Back */}
         <Link
           href="/"
-          className="hover:bg-brand-primary inline-flex items-center text-sm mb-2 text-muted-foreground  hover:text-white transition p-3 rounded-md"
+          className="hover:bg-brand-primary inline-flex items-center text-sm mb-2 text-muted-foreground  hover:text-white transition py-2 px-3 rounded-md"
         >
           <ArrowLeft size={16} className="mr-2" />
           Back to listing

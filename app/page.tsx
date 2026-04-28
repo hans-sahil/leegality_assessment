@@ -1,113 +1,90 @@
-import { Pagination } from "@/src/components/Pagination";
+"use client";
+
+import { useState, useMemo } from "react";
+import { useDebounce } from "@/hooks/useDebounce";
+import { useProducts } from "@/hooks/useProducts";
 import { ProductCard } from "@/src/components/ProductCard";
 import { Filters } from "@/src/components/SidebarFilters";
+import { Pagination } from "@/src/components/Pagination";
+import { useCategories } from "@/hooks/useCategories";
+import { Product } from "@/src/types/Product";
 
-type Product = {
-  id: number;
-  title: string;
-  price: number;
-  thumbnail: string;
-  rating: number;
-  reviews: Array<{
-    rating: number;
-    comment: string;
-    date: Date;
-    reviewerName: string;
-    reviewerEmail: string;
-  }>;
+type FiltersState = {
+  page: number;
+  category: string;
+  brand: string;
+  minPrice: string;
+  maxPrice: string;
+  sort: string;
 };
 
-const LIMIT = 8;
+const initialFilters: FiltersState = {
+  page: 1,
+  category: "all",
+  brand: "",
+  minPrice: "",
+  maxPrice: "",
+  sort: "",
+};
 
-async function getCategories() {
-  const res = await fetch("https://dummyjson.com/products/categories");
-  return res.json();
+function EmptyState() {
+  return (
+    <div className="col-span-full flex flex-col items-center justify-center py-20 text-center">
+      <div className="text-4xl mb-2">🛍️</div>
+      <h2 className="text-lg font-semibold">No products found</h2>
+      <p className="text-muted-foreground text-sm">
+        Try adjusting filters or clearing them
+      </p>
+    </div>
+  );
 }
 
-async function getProducts(params: Promise<{ page?: string }>) {
-  const paramsRes = await params;
-  const page = Number(paramsRes.page) || 1;
-  const skip = (page - 1) * LIMIT;
+export default function Home() {
+  const [filters, setFilters] = useState<FiltersState>(initialFilters);
 
-  console.log("PARAMS RES  : ", paramsRes);
+  const debouncedFilters = useDebounce(filters, 400);
+  const { data, isLoading } = useProducts(debouncedFilters);
+  const { data: categories } = useCategories();
 
-  let url = `https://dummyjson.com/products?limit=${LIMIT}&skip=${skip}`;
+  const products = data?.products ?? [];
 
-  // Category
-  if (paramsRes.category) {
-    url = `https://dummyjson.com/products/category/${params.category}?limit=${LIMIT}&skip=${skip}`;
-  }
-
-  const res = await fetch(url, { cache: "no-store" });
-  const data = await res.json();
-
-  let products = data.products;
-
-  // Price filtering (client-side since API doesn’t support it)
-  if (paramsRes.minPrice) {
-    products = products.filter(
-      (p: Product) => p.price >= Number(paramsRes.minPrice),
-    );
-  }
-  if (paramsRes.maxPrice) {
-    products = products.filter(
-      (p: Product) => p.price <= Number(paramsRes.maxPrice),
-    );
-  }
-
-  // Sorting
-  if (paramsRes.sort === "price-asc") {
-    products.sort((a: Product, b: Product) => a.price - b.price);
-  }
-  if (paramsRes.sort === "price-desc") {
-    products.sort((a: Product, b: Product) => b.price - a.price);
-  }
-  if (paramsRes.sort === "rating-desc") {
-    products.sort((a: Product, b: Product) => b.rating - a.rating);
-  }
-
-  return { ...data, products };
-}
-
-export default async function Home({
-  searchParams,
-}: {
-  searchParams: Promise<{ page?: string }>;
-}) {
-  const searchParamsRes = await searchParams;
-  console.log(searchParamsRes);
-  const currentPage = Number(searchParamsRes.page) || 1;
-
-  const [categories, data] = await Promise.all([
-    getCategories(),
-    getProducts(searchParams),
-  ]);
-  const products = data.products;
-  const total = data.total;
-
-  const totalPages = Math.ceil(total / LIMIT);
+  console.log("PRODUCTS : ", data);
+  const totalPages = useMemo(
+    () => Math.ceil((data?.total ?? 0) / 8),
+    [data?.total],
+  );
 
   return (
-    <div className="container py-8 flex gap-8">
-      <Filters categories={categories} />
+    <div className="container mx-auto px-6 py-8 flex flex-col lg:flex-row gap-8">
+      <Filters
+        categories={categories ?? []}
+        brands={
+          Array.from(
+            new Set(
+              data?.products.map((p: Product) => p.brand).filter(Boolean),
+            ),
+          ) as string[]
+        }
+        filters={filters}
+        setFilters={setFilters}
+      />
 
-      <div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {products.map((product: Product) => (
-            <ProductCard
-              key={product.id}
-              id={product.id}
-              title={product.title}
-              price={product.price}
-              image={product.thumbnail}
-              rating={product.rating}
-              reviews={product.reviews.length || 0}
-            />
-          ))}
-        </div>
+      <div className="flex-1">
+        {isLoading ? (
+          <p className="text-sm text-muted-foreground">Loading...</p>
+        ) : products.length === 0 ? (
+          <EmptyState />
+        ) : (
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 auto-rows-fr">
+              {products.map((p) => (
+                <ProductCard key={p.id} {...p} />
+              ))}
+            </div>
 
-        {/* Pagination */}
-        <Pagination currentPage={currentPage} totalPages={totalPages} />
+            <Pagination currentPage={filters.page} totalPages={totalPages} />
+          </>
+        )}
       </div>
     </div>
   );
